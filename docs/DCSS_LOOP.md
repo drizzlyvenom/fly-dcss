@@ -108,7 +108,7 @@ rule and a scalar modulator. Reward is clipped to [-1,1]:
 Weights initialize at `raw_count * 0.5 / max(1, max_absolute_incoming_count_sum)`;
 learning rate 0.02, other `Parameters` defaults retained. All selected recurrent
 edges are plastic. Neither projection nor readout is trained. Observation,
-action, actual turn change, reward, full before/after weights, rates and circuit
+action, actual turn change, reward, scalar weight/state summaries and circuit
 time are logged per transition in `episode.jsonl`. `summary.json` is concise;
 `console.log` captures at most roughly 2 MB of terminal output.
 
@@ -148,3 +148,8 @@ seed 7 and the pinned 64-neuron graph. It reached turn 20 with 19 waits and one
 east move, HP 18→18, and nonzero weight updates on all 20 transitions. This is
 end-to-end wiring evidence only. It does not show improved play or biological
 learning. A compact checked run summary is in `docs/smoke-result.json`.
+
+
+The full annotated/traced MaleCNS extension uses compact edge chunks and sparse
+fixed input mappings. See [local handoff](LOCAL_HANDOFF.md). The final circuit
+arrays are saved once as `circuit-final.npz`; they are not dumped every turn.

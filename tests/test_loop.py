@@ -114,3 +114,50 @@ class AgentTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class CompactAgentTests(unittest.TestCase):
+    def test_compact_mapping_and_bounded_feedback(self):
+        from fly_dcss.circuit import Graph
+        n = 64
+        graph = Graph(np.arange(n + 1), np.roll(np.arange(n, dtype=np.int32), -1),
+                      np.ones(n, dtype=np.float32), np.ones(n), np.arange(n))
+        agent = LoopAgent(graph, compact=True)
+        observation = ready_state().snapshot()
+        external = agent.external(observation)
+        self.assertEqual(external.shape, (n,))
+        self.assertEqual(agent.projection.shape, (n, 4))
+        self.assertEqual(agent.mapping_summary()['features_connected'], 128)
+        self.assertTrue(np.allclose(agent.readout.sum(axis=1), 1))
+        self.assertTrue(np.all(agent.readout > 0))
+        agent.choose(observation)
+        feedback = agent.feedback(observation, observation)
+        self.assertNotIn('weights_before', feedback)
+        self.assertNotIn('weights_after', feedback)
+        self.assertNotIn('state', feedback)
+        self.assertLess(len(json.dumps(feedback)), 1000)
+        self.assertEqual(agent.circuit.state.dtype, np.dtype('float32'))
+
+class CompactLogTests(unittest.TestCase):
+    def test_finite_summary_is_json_safe(self):
+        from fly_dcss.run_loop import finite_chunks, write_record
+        import io
+        self.assertTrue(finite_chunks(np.zeros(1_000_001, dtype=np.float32)))
+        values = np.zeros(1_000_001, dtype=np.float32)
+        values[-1] = np.nan
+        self.assertFalse(finite_chunks(values))
+        agent = LoopAgent(synthetic_graph(), compact=True)
+        agent.external(ready_state().snapshot())
+        stream = io.StringIO()
+        write_record(stream, 'mapping', **agent.mapping_summary())
+        self.assertEqual(json.loads(stream.getvalue())['kind'], 'mapping')
+
+class FunctionalConnectivityTests(unittest.TestCase):
+    def test_recurrent_pulse_reaches_all_readouts(self):
+        from unittest.mock import patch
+        from tools.check_connectome import check
+        with patch('tools.check_connectome.load_malecns',
+                   return_value=(synthetic_graph(), {'scope': 'synthetic'})):
+            result = check('unused')
+        self.assertTrue(result['all_five_readouts_receive_recurrent_signal'])
+        self.assertGreater(result['downstream_active_nodes_excluding_source'], 0)
+        self.assertLess(result['max_current_absolute_error'], 1e-10)

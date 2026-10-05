@@ -1,0 +1,117 @@
+{
+  "base_commit": "4cfed26cf4946cb01be48cf15e53f5349207e5f4",
+  "python": "3.12.14",
+  "numpy": "2.3.5",
+  "pyarrow_conversion": "23.0.1",
+  "smoke": {
+    "nodes": 167216,
+    "edges": 25587572,
+    "mapping": {
+      "mapping_kind": "fixed engineered mappings, not biological sensory/motor assignments",
+      "seed": 7,
+      "input_nodes": 167216,
+      "encoded_features": 128,
+      "features_connected": 128,
+      "input_links_per_node": 4,
+      "readout_nodes_per_action": 167216,
+      "actions": [
+        "north",
+        "east",
+        "south",
+        "west",
+        "wait"
+      ],
+      "readout_finite": true,
+      "readout_row_sums": [
+        1.0,
+        0.9999998807907104,
+        1.0,
+        1.0,
+        0.9999998807907104
+      ]
+    },
+    "preparation_and_episode_seconds": 9.743253264001396,
+    "checkpoint": "circuit-final.npz",
+    "checkpoint_resumable_game": false,
+    "state_finite": true,
+    "weights_finite": true,
+    "eligibility_finite": true,
+    "weights_cumulative_delta_l1": 291.7707895912971,
+    "completed_actions": 5,
+    "stop_reason": "action_limit",
+    "data_kind": "connectome-derived",
+    "learning_efficacy_tested": false,
+    "elapsed_seconds": 9.06374234300165,
+    "final_turn": 5,
+    "weights_net_delta_l1": 181.6932863914279,
+    "weights_min": 0.0,
+    "weights_max": 0.010775689966976643,
+    "python_peak_rss_bytes": 623091712
+  },
+  "action_counts": {
+    "east": 1,
+    "wait": 4
+  },
+  "rewards": [
+    0.04,
+    -0.01,
+    -0.01,
+    -0.01,
+    -0.01
+  ],
+  "turn_deltas": [
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "circuit_times": [
+    2.0,
+    4.0,
+    6.0,
+    8.0,
+    10.0
+  ],
+  "binary_sha256": "d850beac2b101e6d40512cc2a9570d0ab7a7c00bfc411dbbea94430af3c2f5fc",
+  "scope": {
+    "scope": "full-annotated",
+    "selection": "nonempty annotation superclass OR status=Traced",
+    "source_node_union": 88404403,
+    "nodes": 167216,
+    "edges": 25587572,
+    "source_annotation_records": 211577,
+    "omitted_annotation_records": 44361,
+    "source_connection_rows": 151856684,
+    "out_of_scope_connection_rows": 126269112,
+    "retained_weight_one_rows": 10301874,
+    "retained_weight_two_rows": 4763727,
+    "retained_self_loop_rows": 102,
+    "retained_duplicate_pair_rows": 0,
+    "synapse_count_sum": 124193283,
+    "zero_indegree_nodes": 717,
+    "zero_outdegree_nodes": 1609,
+    "provisional_unknown_sign_nodes": 3656,
+    "conversion_elapsed_seconds": 42.29760940299457,
+    "conversion_peak_rss_kib": 1375072
+  },
+  "source_csr_spot_checks_passed": 74,
+  "outputs": {
+    "summary.json": {
+      "bytes": 1219,
+      "sha256": "33f2c949862965d947d657dcd659efadf796239f38a1ff6c0521a8c3153c4ecc"
+    },
+    "console.log": {
+      "bytes": 2891,
+      "sha256": "2c61ef2281354a4cac1d9376e49585a0ccc0104c009709d51b3680300412b2f4"
+    },
+    "circuit-final.npz": {
+      "bytes": 205370452,
+      "sha256": "cf282876ff10808f86b3039cc9feab3ef5d8ff8b673ca894c14e99ca8d448af5"
+    },
+    "episode.jsonl": {
+      "bytes": 33238,
+      "sha256": "7567c84a6c90b6c0bc98c84138ef2bb1f9068c5d523cce00dead6a37089d2095"
+    }
+  }
+}

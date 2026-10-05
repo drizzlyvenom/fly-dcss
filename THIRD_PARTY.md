@@ -85,3 +85,20 @@ sign for GABA/glutamate/histamine; other/unknown transmitters are positive.
 These assumptions are not independently validated here. No raw graph JSON,
 full dataset or large binary is redistributed in git. Episode metadata records
 attribution, selected local indices and exact source hash.
+
+## Official MaleCNS full annotated/traced import
+
+The full annotated/traced extension downloads official MaleCNS v1.0 annotation,
+connection and neurotransmitter-prediction tables separately. See
+[MALECNS_DATA.md](docs/MALECNS_DATA.md) for exact pinned URLs, hashes, CC BY 4.0
+attribution, selection/exclusion counts and sign assumptions. No raw data or
+converted arrays are redistributed in git. This model preserves all positive
+source-table connections between the explicitly selected annotated/traced IDs,
+including one- and two-synapse connections and brain/VNC boundaries. It excludes
+the raw table's unannotated segmentation fragments; it is not an all-segment
+simulation. The release's upstream min-confidence 0.5 remains in force.
+
+PyArrow is an optional conversion-only dependency, installed separately; the
+runtime continues to require NumPy only. Its Apache-2.0 distribution is not
+vendored. Input projections, action readout, rate dynamics and local plasticity
+are engineering choices and do not inherit anatomical validity from the source.

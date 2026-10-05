@@ -5,6 +5,8 @@ import json
 import os
 from pathlib import Path
 import pty
+import resource
+import sys
 import signal
 import struct
 import subprocess
@@ -25,25 +27,34 @@ def write_record(stream, kind, **fields):
     stream.flush()
 
 
+def finite_chunks(array):
+    return all(np.isfinite(array[start:start + 1_000_000]).all()
+               for start in range(0, len(array), 1_000_000))
+
+
 def run(args):
     if not 1 <= args.steps <= 1000 or not 1 <= args.seconds <= 600:
         raise ValueError("steps must be 1..1000 and seconds 1..600")
     binary = Path(args.crawl).resolve(strict=True)
     output = Path(args.output).resolve()
     output.mkdir(parents=True, exist_ok=False)
+    preparation_started = time.monotonic()
     graph = synthetic_graph()
     provenance = {"kind": "synthetic", "biological": False, "description": "invented three-neuron fixture"}
-    if args.connectome:
+    if getattr(args, "malecns", None):
+        from .malecns import load_malecns
+        graph, provenance = load_malecns(args.malecns)
+    elif args.connectome:
         from .connectome import load_flyhero
         graph, provenance = load_flyhero(args.connectome, n=args.neurons)
-    agent = LoopAgent(graph, seed=args.seed)
+    agent = LoopAgent(graph, seed=args.seed, compact=bool(getattr(args, "malecns", None)))
     version = subprocess.run([str(binary), "-version"], capture_output=True, text=True, timeout=10)
     version_text = version.stdout + version.stderr
     if version.returncode or "Crawl version 0.17.1" not in version_text.splitlines():
         raise ValueError(f"requires verified DCSS 0.17.1 executable: {version_text[:300]}")
     started = time.monotonic()
     deadline = started + args.seconds
-    initial_weights = agent.circuit.weights.copy()
+    cumulative_update_l1 = 0.0
     process = connection = None
     master = slave = None
     pipe_fds = []
@@ -57,8 +68,11 @@ def run(args):
         write_record(log, "metadata", game="DCSS 0.17.1", version=version_text.strip(),
                      binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
                      command=command, transport=args.transport, seed=args.seed, max_actions=args.steps, max_seconds=args.seconds,
-                     graph=provenance, neurons=graph.n, edges=len(graph.weight),
-                     parameters=vars(agent.circuit.parameters), initial_weights=agent.circuit.weights.tolist())
+                     graph=provenance, nodes=graph.n, edges=len(graph.weight),
+                     parameters=vars(agent.circuit.parameters),
+                     dtype=str(agent.circuit.weights.dtype),
+                     initial_weights_min=float(agent.circuit.weights.min()),
+                     initial_weights_max=float(agent.circuit.weights.max()))
         try:
             master, slave = pty.openpty()
             fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 30, 100, 0, 0))
@@ -112,16 +126,21 @@ def run(args):
             connection.send({"msg": "spectator_joined"})
             connection.receive_frame(deadline)
             observation = connection.state.snapshot()
+            agent.external(observation)
+            write_record(log, "mapping", **agent.mapping_summary())
             write_record(log, "initial_observation", observation=observation)
             for index in range(args.steps):
                 if time.monotonic() >= deadline:
                     raise TimeoutError("episode deadline exceeded")
                 action, decision = agent.choose(observation)
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("episode deadline exceeded during circuit choice")
                 write_record(log, "action", index=index, turn=observation["player"]["turn"], action=action, decision=decision)
                 connection.act(action)
                 connection.receive_frame(deadline)
                 after = connection.state.snapshot()
                 result = agent.feedback(observation, after)
+                cumulative_update_l1 += result["weights_delta_l1"]
                 write_record(log, "transition", index=index, action=action, observation=after, **result)
                 completed += 1
                 observation = after
@@ -147,13 +166,31 @@ def run(args):
                 os.close(slave)
             if master is not None:
                 os.close(master)
-            summary = {"completed_actions": completed, "stop_reason": stop, "output": str(output),
+            net_delta_l1 = 0.0
+            for start in range(0, len(graph.weight), 1_000_000):
+                sl = slice(start, start + 1_000_000)
+                baseline = np.clip(np.multiply(graph.weight[sl], agent.circuit.parameters.weight_scale, dtype=np.float64),
+                                   0, agent.circuit.parameters.weight_max).astype(agent.circuit.dtype)
+                net_delta_l1 += float(np.abs(np.subtract(agent.circuit.weights[sl], baseline, dtype=np.float64)).sum(dtype=np.float64))
+            checkpoint = output / "circuit-final.npz"
+            np.savez(checkpoint, state=agent.circuit.state, weights=agent.circuit.weights,
+                     eligibility=agent.circuit.eligibility, time=agent.circuit.time)
+            summary = {"nodes": graph.n, "edges": len(graph.indices),
+                       "mapping": agent.mapping_summary(),
+                       "preparation_and_episode_seconds": time.monotonic() - preparation_started,
+                       "checkpoint": checkpoint.name, "checkpoint_resumable_game": False,
+                       "state_finite": finite_chunks(agent.circuit.state),
+                       "weights_finite": finite_chunks(agent.circuit.weights),
+                       "eligibility_finite": finite_chunks(agent.circuit.eligibility),
+                       "weights_cumulative_delta_l1": cumulative_update_l1,
+                       "completed_actions": completed, "stop_reason": stop, "output": str(output),
                        "data_kind": provenance.get("kind", "connectome-derived"), "learning_efficacy_tested": False,
                        "elapsed_seconds": time.monotonic() - started,
                        "final_turn": connection.state.player.get("turn") if connection else None,
-                       "weights_net_delta_l1": float(np.abs(agent.circuit.weights - initial_weights).sum()),
+                       "weights_net_delta_l1": net_delta_l1,
                        "weights_min": float(agent.circuit.weights.min()),
                        "weights_max": float(agent.circuit.weights.max())}
+            summary["python_peak_rss_bytes"] = int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * (1 if sys.platform == "darwin" else 1024))
             write_record(log, "summary", **summary)
     (output / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     return summary
@@ -167,7 +204,9 @@ def main():
     parser.add_argument("--steps", type=int, default=20)
     parser.add_argument("--seconds", type=float, default=60)
     parser.add_argument("--seed", type=int, default=7)
-    parser.add_argument("--connectome", help="pinned fly-hero subgraph JSON; omitted means synthetic")
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument("--malecns", help="full prepared MaleCNS array directory")
+    source.add_argument("--connectome", help="pinned fly-hero subgraph JSON; omitted means synthetic")
     parser.add_argument("--neurons", type=int, default=64)
     args = parser.parse_args()
     summary = run(args)
