@@ -1,0 +1,19 @@
+{
+  "scope": "full-annotated",
+  "nodes": 167216,
+  "edges": 25587572,
+  "source_body_id": 10001,
+  "source_outgoing_rows": 313,
+  "downstream_active_nodes_excluding_source": 313,
+  "max_current_absolute_error": 0.0,
+  "all_five_readouts_receive_recurrent_signal": true,
+  "recurrent_only_action_scores": {
+    "north": 6.168094479619413e-09,
+    "east": 6.5674856664088566e-09,
+    "south": 5.7442641754335e-09,
+    "west": 5.553772997046735e-09,
+    "wait": 6.100112415197145e-09
+  },
+  "learning_disabled": true,
+  "interpretation": "Functional engineered wiring check, not biological port validation or task efficacy"
+}

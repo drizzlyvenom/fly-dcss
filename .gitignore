@@ -4,3 +4,10 @@ __pycache__/
 # Keep real connectome archives out of this small prototype.
 *.npz
 *.feather
+
+# Local games and experiment logs
+runs/
+
+# Full connectome local data/checkpoints
+*.npy
+*.arrow
