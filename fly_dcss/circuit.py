@@ -21,7 +21,8 @@ def _vector(value, name, dtype=None):
 class Graph:
     """Validated outgoing CSR: row=pre, indices=post, weight=magnitude.
 
-    Arrays are copied and read-only. Body IDs retain the upstream identity.
+    Arrays are copied and read-only. ID namespace is supplied by the loader;
+    converted NPZ IDs are upstream body IDs, fly-hero IDs are local indices.
     """
     indptr: np.ndarray
     indices: np.ndarray

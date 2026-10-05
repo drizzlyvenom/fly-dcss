@@ -1,0 +1,191 @@
+{
+  "date": "2026-10-05",
+  "purpose": "end-to-end correctness smoke only; no learning-efficacy claim",
+  "runtime": "DCSS 0.17.1 with inherited-pipe transport patch",
+  "binary_sha256": "d850beac2b101e6d40512cc2a9570d0ab7a7c00bfc411dbbea94430af3c2f5fc",
+  "seed": 7,
+  "neurons": 64,
+  "edges": 1252,
+  "source_sha256": "6814cc3cc1a65e1e58f589f44deff69a410b3e2e92a95c4f1c0a7b49f4b73d4a",
+  "id_namespace": "flyhero-source-local-index; NOT biological bodyIds",
+  "summary": {
+    "completed_actions": 20,
+    "stop_reason": "action_limit",
+    "data_kind": "connectome-derived",
+    "learning_efficacy_tested": false,
+    "elapsed_seconds": 4.9604893249997986,
+    "final_turn": 20,
+    "weights_net_delta_l1": 0.17489543498107368,
+    "weights_min": 1.592889890871301e-05,
+    "weights_max": 0.11754514610974506
+  },
+  "actions": {
+    "wait": 19,
+    "east": 1
+  },
+  "initial_hp": 18,
+  "final_hp": 18,
+  "nonzero_weight_update_transitions": 20,
+  "transitions": [
+    {
+      "index": 0,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.0006570442065901019
+    },
+    {
+      "index": 1,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.0033079858396479703
+    },
+    {
+      "index": 2,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.006312391565271561
+    },
+    {
+      "index": 3,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.008838988770050522
+    },
+    {
+      "index": 4,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.010729672741292622
+    },
+    {
+      "index": 5,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.012069805573731343
+    },
+    {
+      "index": 6,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.012993810581736879
+    },
+    {
+      "index": 7,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.01362129397156061
+    },
+    {
+      "index": 8,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.014043472607551104
+    },
+    {
+      "index": 9,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.014325591211683971
+    },
+    {
+      "index": 10,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.014512904453279152
+    },
+    {
+      "index": 11,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.01463631298480323
+    },
+    {
+      "index": 12,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.014716743062411029
+    },
+    {
+      "index": 13,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.014768304108185224
+    },
+    {
+      "index": 14,
+      "action": "east",
+      "reward": 0.04,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.059432296154898014
+    },
+    {
+      "index": 15,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.015190812955790525
+    },
+    {
+      "index": 16,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.015546634429162947
+    },
+    {
+      "index": 17,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.01583272096497906
+    },
+    {
+      "index": 18,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.016040157227506423
+    },
+    {
+      "index": 19,
+      "action": "wait",
+      "reward": -0.01,
+      "turn_delta": 1,
+      "hp_delta": 0,
+      "weights_delta_l1": 0.016183083880737414
+    }
+  ]
+}

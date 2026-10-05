@@ -1,0 +1,152 @@
+--- a/crawl-ref/source/tileweb.cc
++++ b/crawl-ref/source/tileweb.cc
+@@ -62,6 +62,10 @@
+     return ((unsigned int) tv.tv_sec) * 1000 + tv.tv_usec / 1000;
+ }
+ 
++// Optional local experiment transport. Gameplay and JSON messages are unchanged.
++// The parent creates two pipes and explicitly passes these descriptors.
++static int _fly_pipe_write_fd = -1;
++
+ TilesFramework tiles;
+ 
+ TilesFramework::TilesFramework()
+@@ -91,7 +95,10 @@
+ void TilesFramework::shutdown()
+ {
+     close(m_sock);
+-    remove(m_sock_name.c_str());
++    if (_fly_pipe_write_fd >= 0)
++        close(_fly_pipe_write_fd);
++    else
++        remove(m_sock_name.c_str());
+ }
+ 
+ void TilesFramework::draw_doll_edit()
+@@ -100,27 +107,50 @@
+ 
+ bool TilesFramework::initialise()
+ {
+-    // Init socket
+-    m_sock = socket(PF_UNIX, SOCK_DGRAM, 0);
+-    if (m_sock < 0)
+-        die("Can't open the webtiles socket!");
+-    sockaddr_un addr;
+-    addr.sun_family = AF_UNIX;
+-    strcpy(addr.sun_path, m_sock_name.c_str());
+-    if (::bind(m_sock, (sockaddr*) &addr, sizeof(sockaddr_un)))
+-        die("Can't bind the webtiles socket!");
+-
+-    int bufsize = 64 * 1024;
+-    if (setsockopt(m_sock, SOL_SOCKET, SO_SNDBUF, &bufsize, sizeof(bufsize)))
+-        die("Can't set buffer size!");
+-    // Need small maximum message size to avoid crashes in OS X
+-    m_max_msg_size = 2048;
+-
+-    struct timeval tv;
+-    tv.tv_sec = 1;
+-    tv.tv_usec = 0;
+-    if (setsockopt(m_sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0)
+-        die("Can't set send timeout!");
++    const char *read_fd = getenv("FLY_DCSS_READ_FD");
++    const char *write_fd = getenv("FLY_DCSS_WRITE_FD");
++    if (read_fd || write_fd)
++    {
++        if (!read_fd || !write_fd)
++            die("Both FLY_DCSS pipe descriptors are required");
++        char *read_end = nullptr;
++        char *write_end = nullptr;
++        const long rd = strtol(read_fd, &read_end, 10);
++        const long wr = strtol(write_fd, &write_end, 10);
++        if (!*read_fd || !*write_fd || *read_end || *write_end
++            || rd < 3 || wr < 3 || rd >= FD_SETSIZE || wr >= FD_SETSIZE
++            || rd == wr)
++        {
++            die("Invalid FLY_DCSS pipe descriptors");
++        }
++        m_sock = static_cast<int>(rd);
++        _fly_pipe_write_fd = static_cast<int>(wr);
++        m_max_msg_size = 2048;
++    }
++    else
++    {
++        // Init socket
++        m_sock = socket(PF_UNIX, SOCK_DGRAM, 0);
++        if (m_sock < 0)
++            die("Can't open the webtiles socket!");
++        sockaddr_un addr;
++        addr.sun_family = AF_UNIX;
++        strcpy(addr.sun_path, m_sock_name.c_str());
++        if (::bind(m_sock, (sockaddr*) &addr, sizeof(sockaddr_un)))
++            die("Can't bind the webtiles socket!");
++
++        int bufsize = 64 * 1024;
++        if (setsockopt(m_sock, SOL_SOCKET, SO_SNDBUF, &bufsize, sizeof(bufsize)))
++            die("Can't set buffer size!");
++        // Need small maximum message size to avoid crashes in OS X
++        m_max_msg_size = 2048;
++
++        struct timeval tv;
++        tv.tv_sec = 1;
++        tv.tv_usec = 0;
++        if (setsockopt(m_sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0)
++            die("Can't set send timeout!");
++    }
+ 
+     if (m_await_connection)
+         _await_connection();
+@@ -180,9 +210,12 @@
+             ssize_t sent = 0;
+             while (sent < fragment_size)
+             {
+-                ssize_t retval = sendto(m_sock, fragment_start + sent,
+-                    fragment_size - sent, 0, (sockaddr*) &m_dest_addrs[i],
+-                    sizeof(sockaddr_un));
++                ssize_t retval = _fly_pipe_write_fd >= 0
++                    ? ::write(_fly_pipe_write_fd, fragment_start + sent,
++                              fragment_size - sent)
++                    : sendto(m_sock, fragment_start + sent,
++                             fragment_size - sent, 0,
++                             (sockaddr*) &m_dest_addrs[i], sizeof(sockaddr_un));
+                 if (retval <= 0)
+                 {
+                     const char *errmsg = retval == 0 ? "No bytes sent"
+@@ -258,14 +291,31 @@
+ wint_t TilesFramework::_receive_control_message()
+ {
+     char buf[4096]; // Should be enough for client->server messages
+-    sockaddr_un srcaddr;
+-    socklen_t srcaddr_len;
+-
+-    srcaddr_len = sizeof(srcaddr);
+-
+-    int len = recvfrom(m_sock, buf, sizeof(buf),
+-                       0,
++    sockaddr_un srcaddr = {};
++    socklen_t srcaddr_len = sizeof(srcaddr);
++    int len = 0;
++    if (_fly_pipe_write_fd >= 0)
++    {
++        // Stream framing: consume exactly one newline-delimited command.
++        // Reading one byte at a time avoids discarding a coalesced next command.
++        while (true)
++        {
++            if (len == static_cast<int>(sizeof(buf)))
++                die("FLY_DCSS pipe command exceeds 4096 bytes");
++            ssize_t count = ::read(m_sock, buf + len, 1);
++            if (count == -1 && errno == EINTR)
++                continue;
++            if (count <= 0)
++                die("FLY_DCSS pipe input closed or unreadable");
++            if (buf[len++] == '\n')
++                break;
++        }
++    }
++    else
++    {
++        len = recvfrom(m_sock, buf, sizeof(buf), 0,
+                        (sockaddr *) &srcaddr, &srcaddr_len);
++    }
+ 
+     if (len == -1)
+         die("Socket read error: %s", strerror(errno));
