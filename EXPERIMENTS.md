@@ -5,7 +5,7 @@
 - 게임: Dungeon Crawl Stone Soup 0.17.1
 - 첫 과제: 고정된 캐릭터로 작은 전투 상황에서 생존하기
 - 장기 목표: 일반 게임 진행과 클리어
-- 현재 상태: 계획만 작성. 게임 연동·에이전트 구현·학습 실행은 아직 하지 않음
+- 현재 상태: [작은 회로 CPU 프로토타입](docs/CIRCUIT_PROTOTYPE.md)으로 상태 갱신·국소 학습 규칙을 합성 데이터에서 검증. 게임 연동·게임 에이전트·실데이터 학습은 아직 하지 않음
 
 ## 기본 구성
 
@@ -49,4 +49,4 @@
 - [Fly Hero](https://github.com/bsgelman/fly-hero)
 - [DOOMFLY](https://github.com/nftechie/doomfly)
 
-외부 코드·게임·데이터는 아직 포함하지 않았다. 도입할 때 각 라이선스와 출처를 확인한다.
+flybrain의 CSR 로딩 방식을 재사용한 출처와 MIT 고지는 [THIRD_PARTY.md](THIRD_PARTY.md)에 정리했다. 외부 게임·실제 커넥톰 데이터는 포함하지 않았다.
